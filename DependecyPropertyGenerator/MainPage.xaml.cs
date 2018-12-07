@@ -46,6 +46,10 @@ namespace DependecyPropertyGenerator
             {
                 GenerateDependencyProp();
             }
+            else if (_chkTypescript.IsChecked == true)
+            {
+                GenerateTypeScriptProp();
+            }
             else
             {
                 GenerateFieldProperty();
@@ -87,6 +91,48 @@ namespace DependecyPropertyGenerator
 
         }
 
+        private void GenerateTypeScriptProp()
+        {
+
+            if (_chkUnderscoreField.IsChecked == true)
+            {
+                _txtFieldName.Text = "_" + _txtPropName.Text;
+            }
+            string skeleton =
+@"private __VAR__NAME: __PROP_TYPE__; 
+get __PROP_NAME__(): __PROP_TYPE__ {
+    return this.__VAR__NAME;
+}
+
+set __PROP_NAME__(value: string) {
+    if (value !== this.__VAR__NAME) {
+
+        this.__VAR__NAME = value;
+        __NOTIFY__
+    }
+}";
+
+            string notify = "this.NotifyPropertyChanged(\"__PROP_NAME__\")";
+
+            string s = skeleton.Replace("__PROP_NAME__", _txtPropName.Text);
+            s = s.Replace("__PROP_TYPE__", _txtPropType.Text);
+            s = s.Replace("__VAR__NAME", _txtFieldName.Text);
+            if (_chkNotificationFunction.IsChecked == true)
+            {
+                notify = notify.Replace("__PROP_NAME__", _txtPropName.Text);
+                
+            }
+            else
+            {
+                notify = "";
+            }
+
+            s = s.Replace("__NOTIFY__", notify);
+            s = s.Replace("\t", "");
+            s = s.Trim();
+            _txtCode.Text = s;
+        }
+
         private void GenerateDependencyProp()
         {
             string nl = "\n";
@@ -107,20 +153,20 @@ namespace DependecyPropertyGenerator
 
             string tab = "\t";
             s += String.Format($"public {_txtPropType.Text} {_txtPropName.Text}{tab}{nl}[{nl}");
-            s += String.Format($"{tab}get [ return({_txtPropType.Text})GetValue({_txtPropName.Text}Property); ]{nl}");
-            s += String.Format($"{tab}set [ SetValue({_txtPropName.Text}Property,value); ]{nl}]{nl}");
+            s += String.Format($"{tab}get => ({_txtPropType.Text})GetValue({_txtPropName.Text}Property); {nl}");
+            s += String.Format($"{tab}set => SetValue({_txtPropName.Text}Property,value);{nl}]");
             if (hasNotifyFunc)
             {
-                //        private static void PirateTileChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+                //private static void SelectedCardChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
                 //{
-                //    CatanHexPanel panel = d as CatanHexPanel;
-                //    TileCtrl newTile = e.NewValue as TileCtrl;
-                //    panel.SetPirateTile(newTile);
+                //    var depPropClass = d as GameGeneratorPage;
+                //    var depPropValue = (CardCtrl)e.NewValue;
+                //    depPropClass?.SetSelectedCard(depPropValue);
                 //}
 
-                s += String.Format($"private static void {_txtPropName.Text}Changed (DependencyObject d, DependencyPropertyChangedEventArgs e){nl}[{nl}{tab}{_txtClasstype.Text} depPropClass = d as {_txtClasstype.Text};{nl}");
-                s += String.Format($"{tab}{_txtPropType.Text} depPropValue = ({_txtPropType.Text})e.NewValue;{nl}");
-                s += String.Format($"{tab}depPropClass.Set{_txtPropName.Text}(depPropValue);{nl}]{nl}");
+                s += String.Format($"private static void {_txtPropName.Text}Changed (DependencyObject d, DependencyPropertyChangedEventArgs e){nl}[{nl}{tab}var depPropClass = d as {_txtClasstype.Text};{nl}");
+                s += String.Format($"{tab}var depPropValue = ({_txtPropType.Text})e.NewValue;{nl}");
+                s += String.Format($"{tab}depPropClass?.Set{_txtPropName.Text}(depPropValue);{nl}]{nl}");
 
                 //private void SetPirateTile(TileCtrl tile)
 
